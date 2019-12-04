@@ -37,8 +37,9 @@ public class MainActivity extends AppCompatActivity {
 
     // Declare a string variable for the key we’re going to use in our fingerprint authentication
     private static final String KEY_NAME = "yourKey";
-   static  Cipher cipher;
+    static  Cipher cipher;
     static  Cipher cipher2;
+    static  Cipher cipher3;
     private static KeyStore keyStore;
     private KeyGenerator keyGenerator;
     private TextView textView;
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private FingerprintManager fingerprintManager;
     private KeyguardManager keyguardManager;
     static SharedPreferences utilsNote;
-     static byte[] iv;
+    static byte[] iv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
                     // for starting the authentication process (via the startAuth method) and processing the authentication process events//
                     FingerprintHandler helper = new FingerprintHandler(this);
                     helper.startAuth(fingerprintManager, cryptoObject);
-                    iv = cipher.getIV ();
+
                 }
             }
         }
@@ -131,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
                     .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
 
                     //Configure this key so that the user has to confirm their identity with a fingerprint each time they want to use it//
-                    .setUserAuthenticationRequired(true)
+                    .setUserAuthenticationRequired(false)
                     .setEncryptionPaddings(
                             KeyProperties.ENCRYPTION_PADDING_NONE)
                     .build());
@@ -168,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
             SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
                     null);
             cipher.init(Cipher.ENCRYPT_MODE, key);
-
+            iv = cipher.getIV ();
             //Return true if the cipher has been initialized successfully//
             return true;
         } catch (KeyPermanentlyInvalidatedException e) {
@@ -182,16 +183,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-   static void Decrypt() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, InvalidKeyException, UnrecoverableKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException {
-       cipher2 = Cipher.getInstance(
-               KeyProperties.KEY_ALGORITHM_AES + "/"
-                       + KeyProperties.BLOCK_MODE_GCM + "/"
-                       + KeyProperties.ENCRYPTION_PADDING_NONE);
 
-       keyStore.load(null);
-       SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
-               null);
-       final GCMParameterSpec spec = new GCMParameterSpec(128, iv);
+
+
+    static void Decrypt() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, InvalidKeyException, UnrecoverableKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException {
+        cipher2 = Cipher.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES + "/"
+                        + KeyProperties.BLOCK_MODE_GCM + "/"
+                        + KeyProperties.ENCRYPTION_PADDING_NONE);
+
+        keyStore.load(null);
+        SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
+                null);
+        final GCMParameterSpec spec = new GCMParameterSpec(128, iv);
         cipher2.init(Cipher.DECRYPT_MODE, key, spec);
 
     }
