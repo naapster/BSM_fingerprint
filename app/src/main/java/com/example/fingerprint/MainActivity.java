@@ -2,6 +2,7 @@ package com.example.fingerprint;
 
 import android.Manifest;
 import android.app.KeyguardManager;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
@@ -29,25 +30,30 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 
 @RequiresApi(api = Build.VERSION_CODES.M)
 public class MainActivity extends AppCompatActivity {
 
     // Declare a string variable for the key we’re going to use in our fingerprint authentication
     private static final String KEY_NAME = "yourKey";
-    private Cipher cipher;
-    private KeyStore keyStore;
+   static  Cipher cipher;
+    static  Cipher cipher2;
+    private static KeyStore keyStore;
     private KeyGenerator keyGenerator;
     private TextView textView;
     private FingerprintManager.CryptoObject cryptoObject;
     private FingerprintManager fingerprintManager;
     private KeyguardManager keyguardManager;
+    static SharedPreferences utilsNote;
+     static byte[] iv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        utilsNote = getSharedPreferences("note", MODE_PRIVATE);
         // If you’ve set your app’s minSdkVersion to anything lower than 23, then you’ll need to verify that the device is running Marshmallow
         // or higher before executing any fingerprint-related code
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -94,12 +100,14 @@ public class MainActivity extends AppCompatActivity {
                     // for starting the authentication process (via the startAuth method) and processing the authentication process events//
                     FingerprintHandler helper = new FingerprintHandler(this);
                     helper.startAuth(fingerprintManager, cryptoObject);
+                    iv = cipher.getIV ();
                 }
             }
         }
     }
 
 //Create the generateKey method that we’ll use to gain access to the Android keystore and generate the encryption key//
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void generateKey() throws FingerprintException {
@@ -120,15 +128,15 @@ public class MainActivity extends AppCompatActivity {
                     KeyGenParameterSpec.Builder(KEY_NAME,
                     KeyProperties.PURPOSE_ENCRYPT |
                             KeyProperties.PURPOSE_DECRYPT)
-                    .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
 
                     //Configure this key so that the user has to confirm their identity with a fingerprint each time they want to use it//
                     .setUserAuthenticationRequired(true)
                     .setEncryptionPaddings(
-                            KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                            KeyProperties.ENCRYPTION_PADDING_NONE)
                     .build());
 
-            //Generate the key//
+            //Generate the key//GCM
             keyGenerator.generateKey();
 
         } catch (KeyStoreException
@@ -148,8 +156,8 @@ public class MainActivity extends AppCompatActivity {
             //Obtain a cipher instance and configure it with the properties required for fingerprint authentication//
             cipher = Cipher.getInstance(
                     KeyProperties.KEY_ALGORITHM_AES + "/"
-                            + KeyProperties.BLOCK_MODE_CBC + "/"
-                            + KeyProperties.ENCRYPTION_PADDING_PKCS7);
+                            + KeyProperties.BLOCK_MODE_GCM + "/"
+                            + KeyProperties.ENCRYPTION_PADDING_NONE);
         } catch (NoSuchAlgorithmException |
                 NoSuchPaddingException e) {
             throw new RuntimeException("Failed to get Cipher", e);
@@ -160,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
             SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
                     null);
             cipher.init(Cipher.ENCRYPT_MODE, key);
+
             //Return true if the cipher has been initialized successfully//
             return true;
         } catch (KeyPermanentlyInvalidatedException e) {
@@ -173,9 +182,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+   static void Decrypt() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, InvalidKeyException, UnrecoverableKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException {
+       cipher2 = Cipher.getInstance(
+               KeyProperties.KEY_ALGORITHM_AES + "/"
+                       + KeyProperties.BLOCK_MODE_GCM + "/"
+                       + KeyProperties.ENCRYPTION_PADDING_NONE);
+
+       keyStore.load(null);
+       SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
+               null);
+       final GCMParameterSpec spec = new GCMParameterSpec(128, iv);
+        cipher2.init(Cipher.DECRYPT_MODE, key, spec);
+
+    }
+
     private class FingerprintException extends Exception {
         public FingerprintException(Exception e) {
             super(e);
         }
     }
+
+
 }
