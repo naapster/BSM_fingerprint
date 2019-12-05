@@ -8,7 +8,6 @@ import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.security.keystore.KeyGenParameterSpec;
-import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
 import android.widget.TextView;
 
@@ -88,21 +87,89 @@ public class MainActivity extends AppCompatActivity {
                 // If the user hasn’t secured their lockscreen with a PIN password or pattern, then display the following text//
                 textView.setText("Please enable lockscreen security in your device's Settings");
             } else {
-                try {generateKey();
-                } catch (FingerprintException e) {
+                try {
+                    keyStore = KeyStore.getInstance("AndroidKeyStore");
+                } catch (KeyStoreException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    keyStore.load(null);
+                } catch (CertificateException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }
 
-                if (initCipher()) {
-                    //If the cipher is initialized successfully, then create a CryptoObject instance//
-                    cryptoObject = new FingerprintManager.CryptoObject(cipher);
+                try {
 
-                    // Here, I’m referencing the FingerprintHandler class that we’ll create in the next section. This class will be responsible
-                    // for starting the authentication process (via the startAuth method) and processing the authentication process events//
+                    if (!keyStore.containsAlias(KEY_NAME)) {
+
+
+                        keyStore = KeyStore.getInstance("AndroidKeyStore");
+                        keyStore.load(null);
+
+                        keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+                        keyGenerator.init(new
+                                KeyGenParameterSpec.Builder(KEY_NAME,
+                                KeyProperties.PURPOSE_ENCRYPT |
+                                        KeyProperties.PURPOSE_DECRYPT)
+                                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                                .setUserAuthenticationRequired(false)
+                                .setEncryptionPaddings(
+                                        KeyProperties.ENCRYPTION_PADDING_NONE)
+                                .build());
+                        keyGenerator.generateKey();
+                        cipher = Cipher.getInstance(
+                                KeyProperties.KEY_ALGORITHM_AES + "/"
+                                        + KeyProperties.BLOCK_MODE_GCM + "/"
+                                        + KeyProperties.ENCRYPTION_PADDING_NONE);
+                        SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
+                                null);
+                        cipher.init(Cipher.ENCRYPT_MODE, key);
+
+                    }
+                    else {
+
+
+                        cipher = Cipher.getInstance(
+                                KeyProperties.KEY_ALGORITHM_AES + "/"
+                                        + KeyProperties.BLOCK_MODE_GCM + "/"
+                                        + KeyProperties.ENCRYPTION_PADDING_NONE);
+                        keyStore = KeyStore.getInstance("AndroidKeyStore");
+                        keyStore.load(null);
+                        SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
+                                null);
+                        cipher.init(Cipher.ENCRYPT_MODE, key);
+                    }
+
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (CertificateException e) {
+                    e.printStackTrace();
+                } catch (InvalidAlgorithmParameterException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (NoSuchProviderException e) {
+                    e.printStackTrace();
+                } catch (KeyStoreException e) {
+                    e.printStackTrace();
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                } catch (UnrecoverableKeyException e) {
+                    e.printStackTrace();
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                }
+
+
+                cryptoObject = new FingerprintManager.CryptoObject(cipher);
                     FingerprintHandler helper = new FingerprintHandler(this);
                     helper.startAuth(fingerprintManager, cryptoObject);
 
-                }
+
             }
         }
     }
@@ -110,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
 //Create the generateKey method that we’ll use to gain access to the Android keystore and generate the encryption key//
 
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    /*@RequiresApi(api = Build.VERSION_CODES.M)
     private void generateKey() throws FingerprintException {
         try {
             // Obtain a reference to the Keystore using the standard Android keystore container identifier (“AndroidKeystore”)//
@@ -181,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
                 | NoSuchAlgorithmException | InvalidKeyException e) {
             throw new RuntimeException("Failed to init Cipher", e);
         }
-    }
+    }*/
 
 
 

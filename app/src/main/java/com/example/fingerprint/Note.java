@@ -10,19 +10,10 @@ import android.widget.TextView;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 public class Note extends AppCompatActivity {
 
@@ -80,7 +71,7 @@ public class Note extends AppCompatActivity {
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
-                try {
+/*                try {
                     MainActivity.Decrypt();
                 } catch (KeyStoreException e) {
                     e.printStackTrace();
@@ -109,7 +100,7 @@ public class Note extends AppCompatActivity {
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
-                oneview.setText(unencryptedString);
+                oneview.setText(unencryptedString)*/;
                 secondview.setText(secret);
 /*                SharedPreferences.Editor editor = MainActivity.utilsNote.edit();
                 editor.putString("Note", secret);
