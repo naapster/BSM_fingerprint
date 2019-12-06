@@ -29,23 +29,23 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 
 @RequiresApi(api = Build.VERSION_CODES.M)
 public class MainActivity extends AppCompatActivity {
 
     // Declare a string variable for the key we’re going to use in our fingerprint authentication
-    private static final String KEY_NAME = "yourKey";
+     static final String KEY_NAME = "yourKey";
     static  Cipher cipher;
     static  Cipher cipher2;
     static  Cipher cipher3;
-    private static KeyStore keyStore;
+    public static KeyStore keyStore;
     private KeyGenerator keyGenerator;
     private TextView textView;
     private FingerprintManager.CryptoObject cryptoObject;
     private FingerprintManager fingerprintManager;
     private KeyguardManager keyguardManager;
     static SharedPreferences utilsNote;
+    static SharedPreferences utilsIv;
     static byte[] iv;
 
     @Override
@@ -53,7 +53,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        utilsNote = getSharedPreferences("note", MODE_PRIVATE);
+        utilsIv = getSharedPreferences("IV", MODE_PRIVATE);
+        utilsNote = getSharedPreferences("Note", MODE_PRIVATE);
+
         // If you’ve set your app’s minSdkVersion to anything lower than 23, then you’ll need to verify that the device is running Marshmallow
         // or higher before executing any fingerprint-related code
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -105,11 +107,6 @@ public class MainActivity extends AppCompatActivity {
                 try {
 
                     if (!keyStore.containsAlias(KEY_NAME)) {
-
-
-                        keyStore = KeyStore.getInstance("AndroidKeyStore");
-                        keyStore.load(null);
-
                         keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
                         keyGenerator.init(new
                                 KeyGenParameterSpec.Builder(KEY_NAME,
@@ -131,14 +128,10 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                     else {
-
-
                         cipher = Cipher.getInstance(
                                 KeyProperties.KEY_ALGORITHM_AES + "/"
                                         + KeyProperties.BLOCK_MODE_GCM + "/"
-                                        + KeyProperties.ENCRYPTION_PADDING_NONE);
-                        keyStore = KeyStore.getInstance("AndroidKeyStore");
-                        keyStore.load(null);
+                                        + KeyProperties.ENCRYPTION_PADDING_NONE);;
                         SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
                                 null);
                         cipher.init(Cipher.ENCRYPT_MODE, key);
@@ -146,11 +139,7 @@ public class MainActivity extends AppCompatActivity {
 
                 } catch (NoSuchAlgorithmException e) {
                     e.printStackTrace();
-                } catch (CertificateException e) {
-                    e.printStackTrace();
                 } catch (InvalidAlgorithmParameterException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
                     e.printStackTrace();
                 } catch (NoSuchProviderException e) {
                     e.printStackTrace();
@@ -253,25 +242,27 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    static void Decrypt() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, InvalidKeyException, UnrecoverableKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException {
-        cipher2 = Cipher.getInstance(
-                KeyProperties.KEY_ALGORITHM_AES + "/"
-                        + KeyProperties.BLOCK_MODE_GCM + "/"
-                        + KeyProperties.ENCRYPTION_PADDING_NONE);
+/*    @RequiresApi(api = Build.VERSION_CODES.O)
+    static void Decrypt() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, InvalidKeyException, UnrecoverableKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException {
+
 
         keyStore.load(null);
         SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
                 null);
+        String loadFromPref = utilsIv.getString("IV","");
+        iv = cipher.doFinal(Base64.getDecoder().decode(loadFromPref));
         final GCMParameterSpec spec = new GCMParameterSpec(128, iv);
-        cipher2.init(Cipher.DECRYPT_MODE, key, spec);
+        cipher.init(Cipher.DECRYPT_MODE, key, spec);
 
-    }
+    }*/
 
+/*
     private class FingerprintException extends Exception {
         public FingerprintException(Exception e) {
             super(e);
         }
     }
+*/
 
 
 }
